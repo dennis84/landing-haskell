@@ -5,18 +5,20 @@ module Landing.App (app) where
 import Network.Wai
 import Network.HTTP.Types
 import Network.HTTP.Types.Header (hContentType)
-import Data.ByteString.Lazy.Char8 ()
 import Landing.Api (readme)
+import Landing.Util (textToString)
 
 app :: Application
 app req f = case pathInfo req of
-  [u, r] -> f $ repo u r
+  [u, r] -> repo f u r
   [] -> f $ index
   _  -> f $ notFound
 
-repo u r = responseLBS status200
-  [(hContentType, "text/plain")]
-  "Repo!"
+repo f u r = do
+  resp <- readme (textToString u) (textToString r)
+  f $ responseLBS status200
+    [(hContentType, "text/plain")]
+    resp
   
 index = responseLBS status200
   [(hContentType, "text/plain")]
