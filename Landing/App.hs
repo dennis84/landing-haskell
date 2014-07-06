@@ -5,8 +5,8 @@ module Landing.App (app) where
 import Network.Wai
 import Network.HTTP.Types
 import Network.HTTP.Types.Header (hContentType)
-import Landing.Api (readme)
-import Landing.Util (textToString)
+import Landing.Api (readme, layout)
+import Landing.Util (textToString, textToByteString, replacePlaceholders)
 
 app :: Application
 app req f = case pathInfo req of
@@ -15,10 +15,15 @@ app req f = case pathInfo req of
   _  -> f $ notFound
 
 repo f u r = do
-  resp <- readme (textToString u) (textToString r)
+  b <- readme (textToString u) (textToString r)
+  l <- layout "dennis84" "landing-theme"
+  let html = replacePlaceholders
+               [("{user}", textToByteString u)
+               ,("{repo}", textToByteString r)
+               ,("{body}", b)] l
   f $ responseLBS status200
-    [(hContentType, "text/plain")]
-    resp
+    [(hContentType, "text/html")]
+    html
   
 index = responseLBS status200
   [(hContentType, "text/plain")]
