@@ -1,5 +1,6 @@
 import Network.Wai.Handler.Warp (run)
 import Landing.App (app)
+import Landing.Cache (makeCache)
 import System.Environment (getEnv)
 import Control.Exception
 
@@ -11,4 +12,5 @@ main = do
   _ <- getEnv "GITHUB_TOKEN"
   p <- getPort
   putStrLn $ "Listening on port " ++ show p
-  run p app
+  cache <- makeCache
+  run p $ app cache
