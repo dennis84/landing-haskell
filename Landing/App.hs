@@ -3,35 +3,36 @@
 module Landing.App (app) where
 
 import Network.Wai
-import Network.HTTP.Types
+import Network.HTTP.Types (status200, status404)
 import Network.HTTP.Types.Header (hContentType)
-import Landing.Api
-import Landing.Cache
-import Landing.Util
 import Data.Time (diffUTCTime, getCurrentTime)
 import Control.Monad (when)
 import Data.Text (Text)
 import qualified Data.ByteString.Lazy as B
+import Landing.Cache as C
+import Landing.Api
+import Landing.Util
 
-app :: LRU -> Application
+app :: C.Cache -> Application
 app cache req f = case pathInfo req of
-  [u, r] -> repo cache f u r
+  [u, r] -> repo cache u r >>= f
   [] -> f index
   _  -> f notFound
 
-repo cache f u r = do
-  let cacheKey = makeCacheKey u r
+repo :: C.Cache -> Text -> Text -> IO Response
+repo cache u r = do
+  let cacheKey = C.makeCacheKey u r
   now <- getCurrentTime
-  result <- cacheLookup cacheKey cache
+  result <- C.lookup cacheKey cache
   html <- case result of
-    Just (v, c) -> do
-      when (now `diffUTCTime` c > 60) $ cacheDelete cacheKey cache
-      return v
+    Just (value, createdAt) -> do
+      when (now `diffUTCTime` createdAt > 60) $ C.delete cacheKey cache
+      return value
     Nothing -> do
-      out <- fetchAndRenderReadme u r
-      _ <- cacheInsert cacheKey (out, now) cache
-      return out
-  f $ responseLBS status200
+      output <- fetchAndRenderReadme u r
+      _ <- C.insert cacheKey (output, now) cache
+      return output
+  return $ responseLBS status200
     [(hContentType, "text/html")]
     html
 
@@ -44,10 +45,12 @@ fetchAndRenderReadme user repo = do
     ,("{repo}", textToByteString repo)
     ,("{body}", r)] l
 
+index :: Response
 index = responseLBS status200
   [(hContentType, "text/plain")]
   "Hello world!"
 
+notFound :: Response
 notFound = responseLBS status404
   [(hContentType, "text/plain")]
   "Not found!"

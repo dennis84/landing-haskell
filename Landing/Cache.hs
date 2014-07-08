@@ -3,31 +3,32 @@
 module Landing.Cache
   ( makeCache
   , makeCacheKey
-  , cacheLookup
-  , cacheInsert
-  , cacheDelete
-  , LRU
+  , lookup
+  , insert
+  , delete
+  , Cache
   ) where
 
+import Prelude hiding (lookup)
 import Landing.Util (textToString)
 import Data.Text (Text)
 import Data.Time.Clock (UTCTime)
 import qualified Data.ByteString.Lazy as B
-import qualified Data.Cache.LRU.IO as Lru
+import qualified Data.Cache.LRU.IO as LRU
 
-type LRU = Lru.AtomicLRU String (B.ByteString, UTCTime)
+type Cache = LRU.AtomicLRU String (B.ByteString, UTCTime)
 
 makeCacheKey :: Text -> Text -> String
 makeCacheKey u r = concat [textToString u, "/", textToString r]
 
-makeCache :: IO LRU
-makeCache = Lru.newAtomicLRU (Just 256)
+makeCache :: IO Cache
+makeCache = LRU.newAtomicLRU (Just 256)
 
-cacheLookup :: String -> LRU -> IO (Maybe (B.ByteString, UTCTime))
-cacheLookup k c = Lru.lookup k c
+lookup :: String -> Cache -> IO (Maybe (B.ByteString, UTCTime))
+lookup k c = LRU.lookup k c
 
-cacheInsert :: String -> (B.ByteString, UTCTime) -> LRU -> IO ()
-cacheInsert k v c = Lru.insert k v c
+insert :: String -> (B.ByteString, UTCTime) -> Cache -> IO ()
+insert k v c = LRU.insert k v c
 
-cacheDelete :: String -> LRU -> IO ()
-cacheDelete k c = (Lru.delete k c) >> return ()
+delete :: String -> Cache -> IO ()
+delete k c = (LRU.delete k c) >> return ()
