@@ -16,7 +16,7 @@ import Landing.Util
 app :: C.Cache -> Application
 app cache req f = case pathInfo req of
   [u, r] -> repo cache u r >>= f
-  [] -> f index
+  [] -> repo cache "dennis84" "landing-haskell" >>= f
   _  -> f notFound
 
 repo :: C.Cache -> Text -> Text -> IO Response
@@ -44,11 +44,6 @@ fetchAndRenderReadme user repo = do
     [("{user}", textToByteString user)
     ,("{repo}", textToByteString repo)
     ,("{body}", r)] l
-
-index :: Response
-index = responseLBS status200
-  [(hContentType, "text/plain")]
-  "Hello world!"
 
 notFound :: Response
 notFound = responseLBS status404
