@@ -41,9 +41,9 @@ fetchAndRenderReadme user repo = do
   r <- readme (textToString user) (textToString repo)
   l <- layout "dennis84" "landing-theme"
   return $ replacePlaceholders
-    [("{user}", textToByteString user)
-    ,("{repo}", textToByteString repo)
-    ,("{body}", r)] l
+    [("{{USER}}", textToByteString user)
+    ,("{{NAME}}", textToByteString repo)
+    ,("{{CONTENT}}", r)] l
 
 notFound :: Response
 notFound = responseLBS status404
