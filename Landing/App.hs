@@ -15,13 +15,14 @@ import Landing.Util
 
 app :: C.Cache -> Application
 app cache req f = case pathInfo req of
-  [u, r] -> repo cache u r >>= f
-  [] -> repo cache "dennis84" "landing-haskell" >>= f
+  [user, repo, ref] -> landingPage cache user repo (Just ref) >>= f
+  [user, repo] -> landingPage cache user repo Nothing >>= f
+  [] -> landingPage cache "dennis84" "landing-haskell" Nothing >>= f
   _  -> f notFound
 
-repo :: C.Cache -> Text -> Text -> IO Response
-repo cache u r = do
-  let cacheKey = C.makeCacheKey u r
+landingPage :: C.Cache -> Text -> Text -> Maybe Text -> IO Response
+landingPage cache user repo ref = do
+  let cacheKey = C.makeCacheKey user repo ref
   now <- getCurrentTime
   result <- C.lookup cacheKey cache
   html <- case result of
@@ -29,16 +30,16 @@ repo cache u r = do
       when (now `diffUTCTime` createdAt > 60) $ C.delete cacheKey cache
       return value
     Nothing -> do
-      output <- fetchAndRenderReadme u r
+      output <- fetchAndRenderReadme user repo ref 
       _ <- C.insert cacheKey (output, now) cache
       return output
   return $ responseLBS status200
     [(hContentType, "text/html")]
     html
 
-fetchAndRenderReadme :: Text -> Text -> IO B.ByteString
-fetchAndRenderReadme user repo = do
-  r <- readme (textToString user) (textToString repo)
+fetchAndRenderReadme :: Text -> Text -> Maybe Text -> IO B.ByteString
+fetchAndRenderReadme user repo ref = do
+  r <- readme (textToString user) (textToString repo) $ fmap textToString ref
   l <- layout "dennis84" "landing-theme"
   return $ replacePlaceholders
     [("{{USER}}", textToByteString user)
