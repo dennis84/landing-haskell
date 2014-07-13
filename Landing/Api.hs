@@ -14,7 +14,8 @@ readme user repo ref = do
   token <- getEnv "GITHUB_TOKEN"
   req <- parseUrl $ concat
     [ "https://api.github.com/repos/", user, "/", repo
-    , "/readme?access_token=", token, "&ref=", fromMaybe "master" ref ]
+    , "/readme?access_token=", token
+    , fromMaybe [] $ fmap ("&ref="++) ref ]
   let req' = req { requestHeaders =
     [(hAccept, "application/vnd.github.VERSION.raw")
     ,(hUserAgent, "Awesome-Landing-Page-App")] }

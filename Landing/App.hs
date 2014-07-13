@@ -14,11 +14,11 @@ import Landing.Api
 import Landing.Util
 
 app :: C.Cache -> Application
-app cache req f = case pathInfo req of
-  [user, repo, ref] -> landingPage cache user repo (Just ref) >>= f
-  [user, repo] -> landingPage cache user repo Nothing >>= f
-  [] -> landingPage cache "dennis84" "landing-haskell" Nothing >>= f
-  _  -> f notFound
+app cache req respond = case pathInfo req of
+  [user, repo, ref] -> respond =<< landingPage cache user repo (Just ref)
+  [user, repo]      -> respond =<< landingPage cache user repo Nothing
+  []                -> respond =<< landingPage cache "dennis84" "landing-haskell" Nothing
+  _                 -> respond notFound
 
 landingPage :: C.Cache -> Text -> Text -> Maybe Text -> IO Response
 landingPage cache user repo ref = do
