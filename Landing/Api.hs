@@ -17,11 +17,12 @@ readme user repo ref = do
     , "/readme?access_token=", token
     , fromMaybe [] $ fmap ("&ref="++) ref ]
   let req' = req { requestHeaders =
-    [(hAccept, "application/vnd.github.VERSION.raw")
-    ,(hUserAgent, "Awesome-Landing-Page-App")] }
+    [ (hAccept, "application/vnd.github.VERSION.raw")
+    , (hUserAgent, "Awesome-Landing-Page-App") ] }
   resp <- withManager $ httpLbs req'
-  return $ parseMarkdown $ responseBody resp
+  return . parseMarkdown $ responseBody resp
 
 layout :: String -> String -> IO B.ByteString
 layout user repo = simpleHttp $ concat
-  ["https://raw.githubusercontent.com/", user, "/", repo, "/gh-pages/index.html"]
+  [ "https://raw.githubusercontent.com/"
+  , user, "/", repo, "/gh-pages/index.html" ]

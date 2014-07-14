@@ -28,10 +28,10 @@ makeCache :: IO Cache
 makeCache = LRU.newAtomicLRU (Just 256)
 
 lookup :: String -> Cache -> IO (Maybe (B.ByteString, UTCTime))
-lookup k c = LRU.lookup k c
+lookup = LRU.lookup
 
 insert :: String -> (B.ByteString, UTCTime) -> Cache -> IO ()
-insert k v c = LRU.insert k v c
+insert = LRU.insert
 
 delete :: String -> Cache -> IO ()
 delete k c = (LRU.delete k c) >> return ()
