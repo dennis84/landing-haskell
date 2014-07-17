@@ -2,7 +2,6 @@
 
 module Landing.Cache
   ( makeCache
-  , makeCacheKey
   , lookup
   , insert
   , delete
@@ -13,16 +12,10 @@ import Prelude hiding (lookup)
 import Landing.Util (textToString)
 import Data.Text (Text)
 import Data.Time.Clock (UTCTime)
-import Data.Maybe (fromMaybe)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Cache.LRU.IO as LRU
 
 type Cache = LRU.AtomicLRU String (B.ByteString, UTCTime)
-
-makeCacheKey :: Text -> Text -> Maybe Text -> String
-makeCacheKey user repo ref = concat
-  [ textToString user, "/", textToString repo, "/"
-  , fromMaybe "master" $ fmap textToString ref ]
 
 makeCache :: IO Cache
 makeCache = LRU.newAtomicLRU (Just 256)

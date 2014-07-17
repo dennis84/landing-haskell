@@ -7,10 +7,11 @@ import Network.HTTP.Conduit
 import Network.HTTP.Types
 import System.Environment (getEnv)
 import Landing.Markdown (parseMarkdown)
+import Landing.Repo
 import qualified Data.ByteString.Lazy as B
 
-readme :: String -> String -> Maybe String -> IO B.ByteString
-readme user repo ref = do
+readme :: Repo -> IO B.ByteString
+readme r@(Repo user repo ref) = do
   token <- getEnv "GITHUB_TOKEN"
   req <- parseUrl $ concat
     [ "https://api.github.com/repos/", user, "/", repo
@@ -20,7 +21,7 @@ readme user repo ref = do
     [ (hAccept, "application/vnd.github.VERSION.raw")
     , (hUserAgent, "Awesome-Landing-Page-App") ] }
   resp <- withManager $ httpLbs req'
-  return . parseMarkdown $ responseBody resp
+  return . parseMarkdown r $ responseBody resp
 
 layout :: String -> String -> IO B.ByteString
 layout user repo = simpleHttp $ concat

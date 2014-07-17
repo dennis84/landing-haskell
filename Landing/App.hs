@@ -9,20 +9,22 @@ import Data.Time (diffUTCTime, getCurrentTime)
 import Control.Monad (when)
 import Data.Text (Text)
 import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy.Char8 as C
 import Landing.Cache as C
-import Landing.Api
-import Landing.Util
+import Landing.Api (readme, layout)
+import Landing.Util (replacePlaceholders)
+import Landing.Repo
 
 app :: C.Cache -> Application
 app cache req respond = case pathInfo req of
-  [user, repo, ref] -> respond =<< landingPage cache user repo (Just ref)
-  [user, repo]      -> respond =<< landingPage cache user repo Nothing
-  []                -> respond =<< landingPage cache "dennis84" "landing-haskell" Nothing
+  [user, repo, ref] -> respond =<< landingPage cache (fromText user repo $ Just ref)
+  [user, repo]      -> respond =<< landingPage cache (fromText user repo Nothing)
+  []                -> respond =<< landingPage cache (fromText "dennis84" "landing-haskell" Nothing)
   _                 -> respond notFound
 
-landingPage :: C.Cache -> Text -> Text -> Maybe Text -> IO Response
-landingPage cache user repo ref = do
-  let cacheKey = C.makeCacheKey user repo ref
+landingPage :: C.Cache -> Repo -> IO Response
+landingPage cache repo = do
+  let cacheKey = makePath repo
   now <- getCurrentTime
   result <- C.lookup cacheKey cache
   html <- case result of
@@ -30,21 +32,21 @@ landingPage cache user repo ref = do
       when (now `diffUTCTime` createdAt > 60) $ C.delete cacheKey cache
       return value
     Nothing -> do
-      output <- fetchAndRenderReadme user repo ref 
+      output <- fetchAndRenderReadme repo
       _ <- C.insert cacheKey (output, now) cache
       return output
   return $ responseLBS status200
     [(hContentType, "text/html")]
     html
 
-fetchAndRenderReadme :: Text -> Text -> Maybe Text -> IO B.ByteString
-fetchAndRenderReadme user repo ref = do
-  r <- readme (textToString user) (textToString repo) $ fmap textToString ref
+fetchAndRenderReadme :: Repo -> IO B.ByteString
+fetchAndRenderReadme r@(Repo user repo ref) = do
+  c <- readme r
   l <- layout "dennis84" "landing-theme"
   return $ replacePlaceholders
-    [("{{USER}}", textToByteString user)
-    ,("{{NAME}}", textToByteString repo)
-    ,("{{CONTENT}}", r)] l
+    [("{{USER}}", C.pack user)
+    ,("{{NAME}}", C.pack repo)
+    ,("{{CONTENT}}", c)] l
 
 notFound :: Response
 notFound = responseLBS status404

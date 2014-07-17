@@ -5,13 +5,29 @@ module Landing.Markdown (parseMarkdown) where
 import Text.Pandoc
 import Text.Pandoc.Options
 import Data.Set (Set, fromList)
+import Network.URI (isAbsoluteURI)
+import Landing.Repo (Repo, makePath)
 import qualified Data.ByteString.Lazy.Char8 as C
 
-parseMarkdown :: C.ByteString -> C.ByteString
-parseMarkdown = C.pack .
-                writeHtmlString writeOptions .
-                readMarkdown readOptions .
-                C.unpack
+parseMarkdown :: Repo -> C.ByteString -> C.ByteString
+parseMarkdown repo = C.pack .
+                     writeHtmlString writeOptions .
+                     changeURIs repo .
+                     readMarkdown readOptions .
+                     C.unpack
+
+changeURIs :: Repo -> Pandoc -> Pandoc
+changeURIs repo = bottomUp (map $ convertURIs repo)
+
+convertURIs :: Repo -> Inline -> Inline
+convertURIs repo (Image a (b, c))
+  | isAbsoluteURI b = Image a (b, c)
+  | otherwise       = Image a (generateGitHubURI repo b, c)
+convertURIs _ x = x
+
+generateGitHubURI :: Repo -> String -> String
+generateGitHubURI repo path = concat
+  [ "https://raw.githubusercontent.com/", makePath repo, "/", path ]
 
 writeOptions = def
   { writerExtensions  = extensions
