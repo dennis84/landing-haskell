@@ -7,7 +7,7 @@ import Network.HTTP.Conduit
 import Network.HTTP.Types
 import System.Environment (getEnv)
 import Landing.Markdown (parseMarkdown)
-import Landing.Repo
+import Landing.Repo (Repo(..))
 import qualified Data.ByteString.Lazy as B
 
 readme :: Repo -> IO B.ByteString

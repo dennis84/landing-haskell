@@ -24,7 +24,7 @@ app cache req respond = case pathInfo req of
 
 landingPage :: C.Cache -> Repo -> IO Response
 landingPage cache repo = do
-  let cacheKey = makePath repo
+  let cacheKey = joinPath repo
   now <- getCurrentTime
   result <- C.lookup cacheKey cache
   html <- case result of
