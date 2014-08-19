@@ -2,8 +2,9 @@
 
 module Landing.Api (readme, layout) where
 
+import Control.Applicative ((<$>))
 import Data.Maybe (fromMaybe)
-import Network.HTTP.Conduit
+import Network.HTTP.Client
 import Network.HTTP.Types
 import System.Environment (getEnv)
 import Landing.Markdown (parseMarkdown)
@@ -16,14 +17,19 @@ readme r@(Repo user repo ref) = do
   req <- parseUrl $ concat
     [ "https://api.github.com/repos/", user, "/", repo
     , "/readme?access_token=", token
-    , fromMaybe [] $ fmap ("&ref="++) ref ]
+    , fromMaybe [] $ (++) "&ref=" <$> ref ]
   let req' = req { requestHeaders =
     [ (hAccept, "application/vnd.github.VERSION.raw")
     , (hUserAgent, "Awesome-Landing-Page-App") ] }
-  resp <- withManager $ httpLbs req'
+  man <- newManager defaultManagerSettings
+  resp <- httpLbs req' man
   return . parseMarkdown r $ responseBody resp
 
 layout :: String -> String -> IO B.ByteString
-layout user repo = simpleHttp $ concat
-  [ "https://raw.githubusercontent.com/"
-  , user, "/", repo, "/gh-pages/index.html" ]
+layout user repo = do
+  req <- parseUrl $ concat
+    [ "https://raw.githubusercontent.com/"
+    , user, "/", repo, "/gh-pages/index.html" ]
+  man <- newManager defaultManagerSettings
+  res <- httpLbs req man
+  return $ responseBody res

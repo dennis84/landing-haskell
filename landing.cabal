@@ -18,7 +18,7 @@ executable landing
     , wai               >= 3.0
     , warp              >= 3.0
     , http-types        >= 0.8
-    , http-conduit      >= 2.1
+    , http-client       >= 0.3
     , pandoc            >= 1.12
     , lrucache          >= 1.0
     , time              >= 1.4
